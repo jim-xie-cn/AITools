@@ -8,6 +8,8 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from SHDataProcess import CSHDataProcess
 import numpy as np
 from IPython.display import display
+from tqdm.notebook import tqdm
+from itertools import product
 
 class CSHArima:
     
@@ -53,33 +55,30 @@ class CSHArima:
     def auto_fit(ds_train,
                  ds_test,
                  seasonal_order_range=((1,2),(1,2),(1,10),(1,7))):
-    
         ds_train = ds_train.astype("float64")
         ds_test = ds_test.astype("float64")
         order_p = seasonal_order_range[0]
         order_d = seasonal_order_range[1]
         order_q = seasonal_order_range[2]
         order_period = seasonal_order_range[3]
+        all_combinations = list(product(order_p, order_d, order_q, order_period))
+    
         ret_order = None
         min_error = np.inf
-        
-        for p in range(order_p[0],order_p[1]):
-            for d in range(order_d[0],order_d[1]):
-                for q in range(order_q[0],order_q[1]):
-                    for period in range(order_period[0],order_period[1]):
-                        try:
-                            model = sm.tsa.arima.ARIMA(ds_train, seasonal_order=(p, d, q,period))
-                            res_arima = model.fit()
-                            predicted = res_arima.forecast(ds_test.shape[0])
-                            error = (np.sqrt(sum((predicted-ds_test).dropna()**2/ds_test.size)))
-                            if error < min_error:
-                                result_arima = res_arima
-                                min_predicted = predicted
-                                min_error = error
-                                ret_order = (p,d,q,period)
-                        except:
-                            print("error",p,d,q,period)
-
+        for p,d,q,period in tqdm(all_combinations):
+            try:
+                model = sm.tsa.arima.ARIMA(ds_train, seasonal_order=(p, d, q,period))
+                res_arima = model.fit()
+                predicted = res_arima.forecast(ds_test.shape[0])
+                error = (np.sqrt(sum((predicted-ds_test).dropna()**2/ds_test.size)))
+                if error < min_error:
+                    result_arima = res_arima
+                    min_predicted = predicted
+                    min_error = error
+                    ret_order = (p,d,q,period)
+            except:
+                print("error",p,d,q,period)
+                        
         return result_arima,ret_order
 
     @staticmethod
