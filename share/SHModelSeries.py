@@ -50,25 +50,34 @@ class CSHArima:
         plt.show()
     
     @staticmethod
-    def auto_fit(train_data,max_p=4,max_d=2,max_q=4):
-        train_data = train_data.astype("float64")
-        result_arima,min_predicted,min_p,min_q,min_d,min_error= None,None,None,None,None,np.inf
-        for p in range(4):
-            for q in range(4):
-                for d in range(2):
-                    model = sm.tsa.arima.ARIMA(train_data, order=(p, d, q))
-                    res_arima = model.fit()
-                    predicted = res_arima.predict()
-                    error = (np.sqrt(sum((predicted-train_data).dropna()**2/train_data.size)))
-                    if error < min_error:
-                        result_arima = res_arima
-                        min_predicted = predicted
-                        min_error = error
-                        min_p = p
-                        min_d = d
-                        min_q = q
+    def auto_fit(ds_train,
+                 ds_test,
+                 seasonal_order_range=((1,2),(1,2),(1,10),(1,7))):
+    
+        ds_train = ds_train.astype("float64")
+        ds_test = ds_test.astype("float64")
+        order_p = seasonal_order_range[0]
+        order_d = seasonal_order_range[1]
+        order_q = seasonal_order_range[2]
+        order_period = seasonal_order_range[3]
+        ret_order = None
+        min_error = np.inf
+        
+        for p in range(order_p[0],order_p[1]):
+            for d in range(order_d[0],order_d[1]):
+                for q in range(order_q[0],order_q[1]):
+                    for period in range(order_period[0],order_period[1]):
+                        model = sm.tsa.arima.ARIMA(ds_train, seasonal_order=(p, d, q,period))
+                        res_arima = model.fit()
+                        predicted = res_arima.forecast(ds_test.shape[0])
+                        error = (np.sqrt(sum((predicted-ds_test).dropna()**2/ds_test.size)))
+                        if error < min_error:
+                            result_arima = res_arima
+                            min_predicted = predicted
+                            min_error = error
+                            ret_order = (p,d,q,period)
                     
-        return result_arima,min_p,min_d,min_q
+        return result_arima,ret_order
 
     @staticmethod
     def decomposition(ds_data,model='additive',period=7):
@@ -80,9 +89,13 @@ def main():
     transformed_data = CSHDataProcess.get_abnormal(ds_data)
     ds_data = ds_data.drop(transformed_data.index)
     ds_data = ds_data[ds_data>0]
-    result_arima,min_p,min_d,min_q = CSHArima.auto_fit(ds_data,4,2,4)
-    CSHArima.show_model(result_arima)
-    predict_data = result_arima.predict()
+    seasonal_order_range = ((1,4),(1,4),(3,10),(5,10))
+    model,ret_order = CSHArima.auto_fit(ds_train = ds_data.head(4),
+                                        ds_test = ds_data.tail(2),
+                                        seasonal_order_range = seasonal_order_range)
+
+    CSHArima.show_model(model)
+    predict_data = model.predict()
     CSHArima.show_result(ds_data,predict_data)
     decomposition = CSHArima.decomposition(ds_data,period=2)
     decomposition.plot()

@@ -7,6 +7,7 @@
 '''
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 from scipy import stats
 from scipy.special import inv_boxcox
 from SHSample import CSHSample
@@ -22,7 +23,7 @@ class CSHDataProcess:
     @staticmethod
     def normal_transform(ds_data,lambda_value=None):
         t_data, l_value = stats.boxcox(ds_data,lambda_value)
-        return pd.Series(t_data),l_value
+        return pd.Series(t_data,index=ds_data.index),l_value
     '''
     从正态分布中，将数据还原（使用box-cox）
     '''
@@ -30,6 +31,26 @@ class CSHDataProcess:
     def normal_recovery(ds_data,lambda_value):
         original_data = inv_boxcox(ds_data,lambda_value)
         return pd.Series(original_data)
+    '''
+    多项式拟合
+    ds_x：pd.Series,自变量，当为空时，时间序列数据拟合。
+    ds_y：pd.Series,因变量
+    degree：多项式最高阶数
+    返回值：拟合对象(p_object),拟合残差的标准差(e_std),拟合后的数据(v_object)
+    '''
+    def polyfit(ds_y,ds_x = pd.Series([]), degree = 2):
+        if ds_x.empty :
+            x = np.arange(ds_y.shape[0]) # 生成对应的时间点作为（自变量）
+        else:
+            x = ds_x.values()
+        y = ds_y.values
+    
+        p_coefficients, e_residuals, _, _, _  = np.polyfit(x, y, degree,full=True)
+    
+        p_object = np.poly1d(p_coefficients)
+        v_object = pd.Series(p_object(x),index=ds_y.index)
+        e_std = np.sqrt(e_residuals / len(x))
+        return p_object,e_std,v_object
     '''
     获取异常数据（Z-Score绝对值大于3 sigma）
     ''' 
@@ -68,7 +89,10 @@ def main():
     #ds_data = ds_data[ds_data>0]
     ds_data.plot()
     plt.show()    
-
+    
+    p_object,e_std,v_object = CSHDataProcess.polyfit(ds_y=ds_data,degree=3)
+    print(v_object)
+    
     df_sample = CSHSample.get_random_classification(1000,n_feature=10,n_class=2)
     df_scale,scale_colums = CSHDataProcess.get_scale(df_sample,y_column='y',scale_type="max-min")
     print(df_scale)
