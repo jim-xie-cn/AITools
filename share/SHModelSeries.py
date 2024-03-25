@@ -67,16 +67,19 @@ class CSHArima:
             for d in range(order_d[0],order_d[1]):
                 for q in range(order_q[0],order_q[1]):
                     for period in range(order_period[0],order_period[1]):
-                        model = sm.tsa.arima.ARIMA(ds_train, seasonal_order=(p, d, q,period))
-                        res_arima = model.fit()
-                        predicted = res_arima.forecast(ds_test.shape[0])
-                        error = (np.sqrt(sum((predicted-ds_test).dropna()**2/ds_test.size)))
-                        if error < min_error:
-                            result_arima = res_arima
-                            min_predicted = predicted
-                            min_error = error
-                            ret_order = (p,d,q,period)
-                    
+                        try:
+                            model = sm.tsa.arima.ARIMA(ds_train, seasonal_order=(p, d, q,period))
+                            res_arima = model.fit()
+                            predicted = res_arima.forecast(ds_test.shape[0])
+                            error = (np.sqrt(sum((predicted-ds_test).dropna()**2/ds_test.size)))
+                            if error < min_error:
+                                result_arima = res_arima
+                                min_predicted = predicted
+                                min_error = error
+                                ret_order = (p,d,q,period)
+                        except:
+                            print("error",p,d,q,period)
+
         return result_arima,ret_order
 
     @staticmethod
