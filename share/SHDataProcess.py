@@ -29,8 +29,8 @@ class CSHDataProcess:
     '''
     @staticmethod
     def normal_recovery(ds_data,lambda_value):
-        original_data = inv_boxcox(ds_data,lambda_value)
-        return pd.Series(original_data)
+        original_data = inv_boxcox(np.array(ds_data.values),lambda_value)
+        return pd.Series(original_data,index=ds_data.index)
     '''
     多项式拟合
     ds_x：pd.Series,自变量，当为空时，时间序列数据拟合。
