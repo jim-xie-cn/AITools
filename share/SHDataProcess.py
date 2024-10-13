@@ -59,29 +59,77 @@ class CSHDataProcess:
         ds_z_score = (ds_data - ds_data.mean()) / ds_data.std()
         filtered =  ds_z_score[(ds_z_score<(0-n_sigma) ) | (ds_z_score>n_sigma)]
         return ds_data.iloc[filtered.index]
-
+    '''
+    去掉异常数据（Z-Score绝对值大于3 sigma）
+    ''' 
+    @staticmethod
+    def remove_abnormal(ds_data,n_sigma=3):
+        ds_z_score = (ds_data - ds_data.mean()) / ds_data.std()
+        filtered =  ds_z_score[(ds_z_score>(0-n_sigma) ) & (ds_z_score < n_sigma)]
+        return ds_data.iloc[filtered.index]
+        
     # 对特征字段进行标准化处理(z-score/max-min)
     @staticmethod
-    def get_scale(df_data,x_columns=[],y_column='label',scale_type='z-score'):
-
+    def get_scale(df_data,x_columns=[],y_column=['label'],scale_type='z-score'):
         df_ret = df_data.copy(deep=True)
         if x_columns:
             scale_colums = x_columns
         else:
             scale_colums = []
             for key,type in zip(df_data.keys(),df_data.dtypes):
-                if not type in ["bool","object","category"] and not key in [y_column]:
+                if not type in ["bool","object","category",'datetime64','datetime'] and not key in y_column:
                     scale_colums.append(key)
+                    if scale_type == 'z-score':
+                        df_ret[[key]] = StandardScaler().fit_transform(df_ret[[key]])
+                    elif scale_type == 'max-min':
+                        df_ret[key] = (df_ret[key]-df_ret[key].min())/(df_ret[key].max()-df_ret[key].min())
 
-        if scale_type == 'z-score':
-            scaler = StandardScaler()
-            df_ret[scale_colums] = scaler.fit_transform(df_ret[scale_colums])
-        elif scale_type == 'max-min':
-            for key in scale_colums:
-                df_ret[key] = (df_ret[key]-df_ret[key].min())/(df_ret[key].max()-df_ret[key].min())
-
+                if type in ['bool']:
+                    df_ret[key] = df_ret[key].astype(int)
+                    
+        #if not scale_colums:
+        #    return df_ret,scale_colums
+        #
+        #if scale_type == 'z-score':
+        #    scaler = StandardScaler()
+        #    df_ret[scale_colums] = scaler.fit_transform(df_ret[scale_colums])
+        #elif scale_type == 'max-min':
+        #    for key in scale_colums:
+        #        df_ret[key] = (df_ret[key]-df_ret[key].min())/(df_ret[key].max()-df_ret[key].min())
         return df_ret,scale_colums
+        
+    # 位置编码函数
+    @staticmethod
+    def get_transformer_position_encoding(seq_length, d_model):
+        position_enc = np.array([
+            [pos / np.power(10000, 2 * (i // 2) / d_model) for i in range(d_model)]
+            for pos in range(seq_length)
+        ])
+        position_enc[:, 0::2] = np.sin(position_enc[:, 0::2])  # 偶数位置
+        position_enc[:, 1::2] = np.cos(position_enc[:, 1::2])  # 奇数位置
+        return position_enc
+        
+    # 等频率划分
+    @staticmethod
+    def assign_qbins(ds_data , quantiles ):
+        ds_raw = ds_data.copy(deep = True)
+        ds_noised = ds_data.copy(deep = True)
+        scale = 10
+        ds_scaled = ds_raw * scale
+        epsilon = 1e-8
+        ds_noised = ds_scaled + np.random.uniform(epsilon, epsilon*2, size=len(ds_scaled))
+        ds_noised[ds_noised.idxmin()] = ds_scaled.min()
 
+        ds_noised = ds_noised.drop_duplicates(keep='first')
+        labels=range(quantiles)
+        _, bin_edges  = pd.qcut(ds_noised,q=quantiles,duplicates='drop',retbins=True,precision=8)
+        if len(labels) >= len(bin_edges):
+            labels = labels[0:(len(labels)-1)]
+        bins,bin_edges = pd.cut(ds_scaled, bins=bin_edges, labels=labels, include_lowest=True,retbins=True)
+        bin_edges = bin_edges / scale
+        intervals = [[bin_edges[i], bin_edges[i + 1]] for i in range(len(bin_edges) - 1)]
+        return bins,intervals
+            
 def main():
     ds_data = pd.Series([1,2,3,4,5,6])
     transformed_data = CSHDataProcess.get_abnormal(ds_data)

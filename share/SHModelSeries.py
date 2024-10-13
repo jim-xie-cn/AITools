@@ -52,40 +52,35 @@ class CSHArima:
         plt.show()
     
     @staticmethod
-    def auto_fit(ds_sample,n_verify,n_forcast, seasonal_order_range=((1,2),(1,2),(1,3),(5,7))):
-        def train_once(ds_data,n_verify,n_forcast,p, d, q,period):
-            model = sm.tsa.arima.ARIMA(ds_data, seasonal_order=(p, d, q ,period )).fit()
-            start_pos = ds_sample.shape[0] - n_verify
-            end_pos = ds_sample.shape[0]
-            ds_verify = ds_sample.tail(n_verify)
-            ds_predicted = model.predict(start_pos,end_pos,dynamic=True, typ='levels')
-            ds_forcast = model.forecast(n_forcast)
-            error = (np.sqrt(sum((ds_predicted-ds_verify).dropna()**2/ds_verify.size)))
-            return model,error,ds_forcast,ds_predicted,ds_verify
-            
-        ds_sample = ds_sample.astype("float64")
+    def auto_fit(ds_train,
+                 ds_test,
+                 seasonal_order_range=((1,2),(1,2),(1,10),(1,7))):
+        ds_train = ds_train.astype("float64")
+        ds_test = ds_test.astype("float64")
         order_p = seasonal_order_range[0]
         order_d = seasonal_order_range[1]
         order_q = seasonal_order_range[2]
         order_period = seasonal_order_range[3]
         all_combinations = list(product(order_p, order_d, order_q, order_period))
+    
+        ret_order = None
         min_error = np.inf
-        ret = {}
         for p,d,q,period in tqdm(all_combinations):
-            try :
-                model,error,ds_forcast,ds_predicted,ds_verify = train_once(ds_sample,n_verify,n_forcast,p,d,q,period)
+            try:
+                model = sm.tsa.arima.ARIMA(ds_train, seasonal_order=(p, d, q,period))
+                res_arima = model.fit()
+                predicted = res_arima.forecast(ds_test.shape[0])
+                error = (np.sqrt(sum((predicted-ds_test).dropna()**2/ds_test.size)))
                 if error < min_error:
+                    result_arima = res_arima
+                    min_predicted = predicted
                     min_error = error
-                    ret['model'] = model
-                    ret['error'] = error
-                    ret['paramter'] = (p,d,q,period)
-                    ret['forcast'] = ds_forcast
-                    ret['predict'] = ds_predicted
-                    ret['verify'] = ds_verify
+                    ret_order = (p,d,q,period)
             except:
                 print("error",p,d,q,period)
-        return ret
-        
+                        
+        return result_arima,ret_order
+
     @staticmethod
     def decomposition(ds_data,model='additive',period=7):
         decomposition = seasonal_decompose(ds_data,period=period,model=model)
@@ -97,14 +92,13 @@ def main():
     ds_data = ds_data.drop(transformed_data.index)
     ds_data = ds_data[ds_data>0]
     seasonal_order_range = ((1,4),(1,4),(3,10),(5,10))
-    result = CSHArima.auto_fit(ds_data,
-                                        n_verify = 2,
-                                        n_forcast = 3,
+    model,ret_order = CSHArima.auto_fit(ds_train = ds_data.head(4),
+                                        ds_test = ds_data.tail(2),
                                         seasonal_order_range = seasonal_order_range)
-    
-    CSHArima.show_model(result['model'])
-    CSHArima.show_result(result['predict'],result['verify'])
-    
+
+    CSHArima.show_model(model)
+    predict_data = model.predict()
+    CSHArima.show_result(ds_data,predict_data)
     decomposition = CSHArima.decomposition(ds_data,period=2)
     decomposition.plot()
     plt.show()

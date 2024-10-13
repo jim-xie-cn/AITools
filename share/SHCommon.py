@@ -35,7 +35,13 @@ class CSHCommon:
         df['y'] = ds_2
         df=df[0:-1]
         return df[df['x']!=df['y']].index.values
-
+    
+    '''
+    将DataFrame划分成多个batch
+    '''
+    @staticmethod
+    def get_dataframe_batch(df_sample,batch_size = 10):
+        return [df_sample[i:i + batch_size] for i in range(0, len(df_sample), batch_size)]
     '''
     使用PCA，得到降维后和重构后的矩阵（根据特征值和特征向量）
     dataMat：原始矩阵

@@ -52,25 +52,35 @@ class CSHFeature():
             self.m_df_h2o[self.m_col_y] = self.m_df_h2o[self.m_col_y].asfactor()
     '''
     横坐标：信息总量（total information）
-        --变量对预测的影响，预测能力越强，总信息越大。
+        --变量对预测的影响，,即该变量与其他变量的相关性。
         --横轴上的值越大，表示变量对响应的影响越显著。
     纵坐标：净信息（net information）
-        --变量的独特性，即该变量与其他变量的相关性。
-        --净信息越高，与其他变量的相关性越低，表示该变量对响应的影响越独特。
+        --变量的独特性，总信息量.
+        --净信息越高，预测能力越强，表示该变量对响应的影响越独特。
     可接受特征
         --位于虚线以上和右侧的特征是最具预测能力和独特性的特征，它们被认为是可接受的特征，
-        --这些特征是被认为是核心驱动因素的变量，它们在总信息（预测能力）和净信息（独特性）方面都表现出色。        --可以用于建立模型和做出决策。
+        --这些特征是被认为是核心驱动因素的变量，它们在总信息（预测能力）和净信息（独特性）方面都表现出色。        
+        --可以用于建立模型和做出决策。
+    返回值方法：
+    ig.get_admissible_score_frame()
+    ig.get_admissible_features()
     '''
-    def get_inform_graph(self,algorithm="AUTO"): #["All",'AUTO','deeplearning','drf','gbm','glm','xgboost']
+    def get_inform_graph(self,algorithm="AUTO",protected_columns=[]): #["All",'AUTO','deeplearning','drf','gbm','glm','xgboost']
         if algorithm == "All":
             ret = {}
-            for algor in ['AUTO','deeplearning','drf','gbm','glm','xgboost']:
-                ig = H2OInfogram(algorithm=algor)
-                ig.train(x=self.m_col_x, y=self.m_col_y,training_frame=df_h2o)
+            for algor in ['AUTO','deeplearning','drf','gbm','glm']: #,'xgboost']: xgboost 有 bug
+                if protected_columns:
+                    ig = H2OInfogram(algorithm=algor,protected_columns=protected_columns)
+                else:
+                    ig = H2OInfogram(algorithm=algor)
+                ig.train(x=self.m_col_x, y=self.m_col_y,training_frame=self.m_df_h2o)
                 ret[algor] = ig
             return ret
         else:
-            ig = H2OInfogram(algorithm=algorithm)
+            if protected_columns:
+                ig = H2OInfogram(algorithm=algorithm,protected_columns=protected_columns)
+            else:
+                ig = H2OInfogram(algorithm=algorithm)
             ig.train(x=self.m_col_x, y=self.m_col_y,training_frame=self.m_df_h2o)
             return ig
     '''

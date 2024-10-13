@@ -21,6 +21,8 @@ import json
 from scipy.stats import f_oneway
 from statsmodels.tsa.stattools import adfuller 
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from scipy.stats import norm, expon
+from scipy.optimize import curve_fit
 
 class CSHDataDistribution:
     def __init__(self):
@@ -80,7 +82,35 @@ class CSHDataDistribution:
         ret['chis-test']['detail'] = temp
         ret['chis-test']['describe'] = "卡方检验。"
         return ret
- 
+    '''
+    可视化分布
+    '''
+    @staticmethod
+    def normal_fit(ds_data,bins=100):
+        data = ds_data.to_numpy()
+        hist, bin_edges = np.histogram(data, bins=bins, density=True)
+        bin_centers = 0.5*(bin_edges[1:] + bin_edges[:-1])
+        
+        def normal_pdf(x, mu, sigma):
+            return norm.pdf(x, loc=mu, scale=sigma)
+        def exponential_pdf(x, lamb):
+            return expon.pdf(x, scale=1/lamb)
+        
+        params_normal, _ = curve_fit(normal_pdf, bin_centers, hist)
+        params_exponential, _ = curve_fit(exponential_pdf, bin_centers, hist)
+        
+        plt.hist(data, bins=bins, density=True, alpha=0.5, color='blue')
+        
+        x_range = np.linspace(-4, 4, 1000)
+        plt.plot(x_range, normal_pdf(x_range, *params_normal), color='red', label='Normal Fit')
+        plt.plot(x_range, exponential_pdf(x_range, *params_exponential), color='green', label='Exponential Fit')
+        
+        plt.title('Fitting Distribution')
+        plt.xlabel('Value')
+        plt.ylabel('Density')
+        plt.legend()
+        plt.show()
+        
 class CSHDataTest:
 
     '''
