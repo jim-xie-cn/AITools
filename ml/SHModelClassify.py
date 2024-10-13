@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from SHCommon import CSHCommon
 from SHSample import CSHSample
-from SHEvaluation import CSHROC
 from tqdm import tqdm
 from IPython.display import display
 from h2o.automl import H2OAutoML
@@ -219,9 +218,7 @@ def main():
     nan_rows = df_pred[df_pred.isna().any(axis=1)]
     display(nan_rows)
     df_pred = df_pred.dropna()
-    roc = CSHROC(df_pred)
-    roc.show_ROC_by_one_rest(prob_bins=100)
-    roc.show_ROC_by_one_one(prob_bins=100)
+    print(df_pred)
 
 if __name__ == "__main__":
     main()
