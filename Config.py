@@ -12,6 +12,7 @@ g_model_base = "meta-llama/Meta-Llama-3-8B"
 g_default_batch_size = 32
 g_default_max_length = 32*1024
 g_default_max_new_tokens = 1024
+g_embedding_shape = (128, 128)
 
 quantization_config = BitsAndBytesConfig(load_in_4bit = True,
                                          bnb_4bit_quant_type = 'nf4',

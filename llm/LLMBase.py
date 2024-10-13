@@ -2,17 +2,17 @@
 import torch,gc,os,random,warnings,sys
 from accelerate import Accelerator
 #for llama
-#from transformers import AutoTokenizer,LlamaTokenizer
-#from transformers import AutoModelForCausalLM as ModelGenerate
-#from transformers import AutoModelForSeq2SeqLM as ModelQA
-#from transformers import AutoModelForSequenceClassification as ModelClass
-#from transformers import LlamaModel as ModelEmbedding
+from transformers import AutoTokenizer,LlamaTokenizer
+from transformers import AutoModelForCausalLM as ModelGenerate
+from transformers import AutoModelForSeq2SeqLM as ModelQA
+from transformers import AutoModelForSequenceClassification as ModelClass
+from transformers import LlamaModel as ModelEmbedding
 #for Qwen
-from transformers import Qwen2ForCausalLM as ModelGenerate
-from transformers import AutoModelForCausalLM as ModelQA
-from transformers import Qwen2ForSequenceClassification as ModelClass
-from transformers import Qwen2Model as ModelEmbedding
-from transformers import Qwen2Tokenizer as AutoTokenizer
+#from transformers import Qwen2ForCausalLM as ModelGenerate
+#from transformers import AutoModelForCausalLM as ModelQA
+#from transformers import Qwen2ForSequenceClassification as ModelClass
+#from transformers import Qwen2Model as ModelEmbedding
+#from transformers import Qwen2Tokenizer as AutoTokenizer
 
 from transformers import Trainer,DataCollatorWithPadding,AutoModelForSequenceClassification
 from LLMCommon import CLLMCommon
