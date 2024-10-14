@@ -14,7 +14,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision.models as models
 from Config import g_data_root,g_embedding_shape
-g_embedding_root = "%s/embedding/"%(g_data_root)
+g_test_root = "%s/test/"%(g_data_root)
 
 class CEmbeddingDataset(Dataset):
     
@@ -107,9 +107,7 @@ class CDLResNet():
         return predicted
 
 def main():
-    attack = "Backdoor_attack"
-    embedding_index = "%s/text-label/%s/index.csv"%(g_embedding_root,attack)
-    dataset = CEmbeddingDataset(embedding_index)
+    dataset = CEmbeddingDataset( "%s/test.csv"%(g_test_root)
     train_loader,test_loader = CEmbeddingDataset.get_loader(dataset,test_ratio=0.2,batch_size=32)
     for batch_idx, (data_batch, labels_batch) in enumerate(train_loader):
         print('Labels:', labels_batch)
