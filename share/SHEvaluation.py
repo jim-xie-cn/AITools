@@ -51,6 +51,63 @@ plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
 # 解决负号'-'显示为方块的问题
 plt.rcParams['axes.unicode_minus'] = False
 
+class CSHSimilarity(object):
+    def __init__(self,list1,list2):
+        self.m_list1 = list1
+        self.m_list2 = list2
+
+    #余弦距离（cosine）
+    def Cosine(self):
+        ret = cosine_similarity([self.m_list1, self.m_list2])
+        return ret[0][1]
+        return cosine(self.m_list1, self.m_list2)
+
+    #皮尔森相关系数（pearson）,https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html
+    def Pearson(self):
+        return stats.pearsonr(self.m_list1, self.m_list2)[0]
+
+    #欧式距离
+    def Euclidean(self):
+        return np.linalg.norm(np.array(self.m_list1) - np.array(self.m_list2))
+
+    #KS检验,(P越大，两个分布越相似)
+    #P比指定的显著水平（假设为5%）小，则我们完全可以拒绝假设，即两个分布不服从同一分布。
+    #ret[0]越小越相似
+    def KSTest(self):
+        ret = ks_2samp(self.m_list1, self.m_list2)
+        return ret[0],ret[1]
+
+    #EMD距离
+    def EMD(self):
+        return wasserstein_distance(self.m_list1, self.m_list2)
+
+    #Manhattan
+    def Manhattan(self):
+        return sum(abs(a-b) for a,b in zip(self.m_list1,self.m_list2))
+
+    #Minkowski
+    def Minkowski(self):
+        return float(self.minkowski_distance(np.array(self.m_list1),np.array(self.m_list2),3))
+
+    #Jaccard
+    def Jaccard(self):
+        return self.jaccard_similarity(self.m_list1,self.m_list2)
+
+    def minkowski_distance(self,x,y,p_value):
+        return self.nth_root(sum(pow(abs(a-b),p_value) for a,b in zip(x, y)),p_value)
+
+    def nth_root(self,value, n_root):
+        root_value = 1/float(n_root)
+        return round (float(value) ** float(root_value),3)
+
+    def jaccard_similarity(self,x,y):
+        intersection_cardinality = len(set.intersection(*[set(x), set(y)]))
+        union_cardinality = len(set.union(*[set(x), set(y)]))
+        return intersection_cardinality/float(union_cardinality)
+
+    #def Quadratic(self):
+    #    return get_quadratic_distance(self.m_list1,self.m_list2)
+
 class CSHEvaluate():
     
     def __init__(self):
