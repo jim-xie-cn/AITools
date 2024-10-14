@@ -1,0 +1,15 @@
+name: py39
+channels:
+  - defaults
+dependencies:
+  - python=3.9
+  - pytorch-cuda=12.1
+  - pytorch==2.3.0
+  - torchaudio==2.3.0
+  - torchvision==0.18.0
+  - matplotlib
+  - jupyter
+  - libstdcxx-ng
+  - gcc
+  - h2o
+prefix: /root/miniconda3/envs/py39
